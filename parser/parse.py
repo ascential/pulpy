@@ -3,7 +3,6 @@ from    os          import getenv
 from    glob        import glob
 
 # TODO:
-# - Provide proper on-code documentation and also README.md document
 # - Import only "must" packages and remove of all unused ones
 # - Add try: catch: exception: statements where needed
 
