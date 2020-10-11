@@ -1,2 +1,2 @@
 # pulpy
-Pulumi Python - Pulpy
+Pulumi Python & YAML or short Pulpy
