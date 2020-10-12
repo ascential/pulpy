@@ -4,7 +4,6 @@ from    glob        import glob
 
 
 # TODO:
-# - Import only "must" packages and remove of all unused ones
 # - Add try: catch: exception: statements where needed
 
 class ParseYAML:
