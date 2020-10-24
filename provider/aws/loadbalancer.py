@@ -4,7 +4,7 @@ from    os          import getenv
 from    pulumi_aws  import lb
 
 # Custom packages
-from parse              import ParseYAML
+from pulpy.parser       import ParseYAML
 from aws.mandatory      import Mandatory
 from aws.vpc            import VPCs
 from aws.subnet         import Subnets
@@ -12,7 +12,7 @@ from aws.securitygroup  import SecurityGroups
 from aws.ec2            import EC2
 
 # General variables
-resource_type           = "lb"
+resource_type           = "loadbalancer"
 resource_project        = getenv('IAC__PROJECT_ID')
 resource_mandatory_tags = Mandatory.Tags()
 

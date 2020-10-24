@@ -32,50 +32,59 @@ class RDS:
         aws_rds_subnet_group_id = RDS.SubnetGroupId()
         aws_sg_id               = SecurityGroups.SecurityGroupId()
 
-        # for rds_aurora_name, rds_aurora_configuration in resource_specs["aurora"].items():
+        for rds_aurora_setup_type, rds_aurora_configuration in resource_specs["aurora"].items():
 
-        #     # AWS RDS Aurora Dynamic Variables
-        #     resource_specific_type          = "aurora"
-        #     resource_name                   = rds_aurora_name
+            # AWS RDS Aurora Dynamic Variables
+            resource_setup_type             = rds_aurora_setup_type
 
-        #     print(rds_aurora_name)
+            if resource_setup_type == "instance":
 
-        #     if rds_aurora_configuration["setup_type"] == "instance":
+                for rds_instance_name, rds_instance_configuration in rds_aurora_configuration.items():
 
-        #         resource_instance_type          = rds_aurora_configuration["instance_type"]
-        #         resource_engine                 = rds_aurora_configuration["engine"]
-        #         resource_engine_version         = rds_aurora_configuration["engine_version"]
-        #         resource_allocated_storage      = rds_aurora_configuration["allocated_storage"]
-        #         resource_storage_type           = rds_aurora_configuration["storage_type"]
-        #         resource_subnet_group           = rds_aurora_configuration["subnet_group"]
-        #         resource_parameter_group        = rds_aurora_configuration["parameter_group"]
-        #         resource_security_groups        = rds_aurora_configuration["security_groups"]
-        #         resource_database_name          = rds_aurora_configuration["database_name"]
-        #         resource_username               = rds_aurora_configuration["username"]
-        #         resource_password               = rds_aurora_configuration["password"]
-        #         resource_security_groups_list   = []
+                    resource_instance_type          = rds_instance_configuration["instance_type"]
+                    resource_engine                 = rds_instance_configuration["engine"]
+                    resource_engine_version         = rds_instance_configuration["engine_version"]
+                    resource_allocated_storage      = int(rds_instance_configuration["allocated_storage"])
+                    # resource_storage_type           = rds_instance_configuration["storage_type"]
+                    resource_subnet_group           = rds_instance_configuration["subnet_group"]
+                    resource_parameter_group        = rds_instance_configuration["parameter_group"]
+                    resource_security_groups        = rds_instance_configuration["security_groups"]
+                    resource_database_name          = rds_instance_configuration["database_name"]
+                    resource_username               = rds_instance_configuration["username"]
+                    resource_password               = rds_instance_configuration["password"]
+                    resource_security_groups_list   = []
 
-        #         this_subnet_group               = aws_rds_subnet_group_id[str(resource_subnet_group)]
+                    this_subnet_group               = aws_rds_subnet_group_id[str(resource_subnet_group)]
+                    # these_security_groups           = aws_sg_id[str(resource_security_groups)]
 
-        #         for each_security_group_found in resource_security_groups:
-        #             resource_security_groups_list.append(aws_sg_id[str(each_security_group_found)])
+                    for each_security_group_found in resource_security_groups:
+                        resource_security_groups_list.append(aws_sg_id[str(each_security_group_found)])
 
-                # aurora = rds.Cluster(
+                    aurora = rds.Instance(
 
-                #     resource_name,
-                #     instance_class          = resource_instance_type,
-                #     engine                  = resource_engine,
-                #     engine_version          = resource_engine_version,
-                #     allocated_storage       = resource_allocated_storage,
-                #     # storage_type            = resource_storage_type,
-                #     db_subnet_group_name    = this_subnet_group,
-                #     parameter_group_name    = resource_parameter_group,
-                #     vpc_security_group_ids  = resource_security_groups_list,
-                #     name                    = resource_database_name,
-                #     username                = resource_username,
-                #     password                = resource_password
+                        rds_instance_name,
+                        instance_class          = resource_instance_type,
+                        engine                  = resource_engine,
+                        engine_version          = resource_engine_version,
+                        allocated_storage       = resource_allocated_storage,
+                        # storage_type            = resource_storage_type,
+                        db_subnet_group_name    = this_subnet_group,
+                        parameter_group_name    = resource_parameter_group,
+                        vpc_security_group_ids  = resource_security_groups_list,
+                        name                    = resource_database_name,
+                        username                = resource_username,
+                        password                = resource_password
 
-                #     )
+                        )
+
+                    pulumi.export(
+
+                        aurora._name, [
+
+                            aurora.address,
+                            aurora.endpoint
+
+                        ])
 
             # elif rds_aurora_configuration["setup_type"] == "cluster":
 
@@ -205,7 +214,7 @@ class RDS:
             # AWS RDS Parameter Group Dynamic Variables
             resource_name           = parametergroup_name
             resource_description    = parametergroup_configuration["description"]
-            resource_subnet_ids     = parametergroup_configuration["subnets"]
+            resource_family         = parametergroup_configuration["family"]
 
             resource_tags           = None
             resource_tags           = parametergroup_configuration["tags"] if "tags" in parametergroup_configuration else None
@@ -223,14 +232,15 @@ class RDS:
 
             resource_subnets_list   = []
 
-            for each_subnet_found in resource_subnet_ids:
-                resource_subnets_list.append(aws_subnet_id[str(each_subnet_found)])
+            # for each_subnet_found in resource_subnet_ids:
+            #     resource_subnets_list.append(aws_subnet_id[str(each_subnet_found)])
 
             parametergroup      = rds.ParameterGroup(
 
                 resource_name,
+                name            = resource_name,
                 description     = resource_description,
-                subnet_ids      = resource_subnets_list,
+                family          = resource_family,
                 tags            = tags_list
 
             )
