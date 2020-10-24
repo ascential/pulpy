@@ -4,7 +4,7 @@ from    os          import getenv
 from    pulumi_aws  import lb
 
 # Custom packages
-from pulpy.parser       import ParseYAML
+from parse              import ParseYAML
 from aws.mandatory      import Mandatory
 from aws.vpc            import VPCs
 from aws.subnet         import Subnets
