@@ -1,4 +1,4 @@
-import  pulumi, yaml
+import  pulumi
 
 from    sys         import path
 from    os          import getenv
