@@ -1,8 +1,8 @@
 from sys    import path
-from os import getenv
+from os     import getenv
 
 # Custom packages
-from pulpy.parser import ParseYAML
+from parse  import ParseYAML
 
 # General variables
 resource_type       = "mandatory"
