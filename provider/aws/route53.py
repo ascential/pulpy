@@ -66,13 +66,7 @@ class Route53:
                 resource_name,
                 name        = resource_name,
                 comment     = resource_comment,
-                tags        = tags_list,
-
-                # opts        = pulumi.ResourceOptions(
-
-                #     import_='Z08413823PAOTHXSATNAV'
-
-                #     )
+                tags        = tags_list
 
             )
 
