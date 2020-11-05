@@ -37,8 +37,9 @@ class LoadBalancer:
             # AWS ALB Dynamic Variables
             resource_specific_type      = "alb"
             resource_name               = alb_name
-            resource_subnets            = alb_configuration["subnets"]
-            resource_security_groups    = alb_configuration["security_groups"]
+            resource_subnets            = alb_configuration["subnets"]          if "subnets"            in alb_configuration else None
+            resource_security_groups    = alb_configuration["security_groups"]  if "security_groups"    in alb_configuration else None
+            resource_exposure           = alb_configuration["exposure"]         if "exposure"           in alb_configuration else None
 
             resource_tags               = None
             resource_tags               = alb_configuration["tags"] if "tags" in alb_configuration else None
