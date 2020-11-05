@@ -1,4 +1,4 @@
-import  pulumi
+import  pulumi, yaml
 
 from    sys         import path
 from    os          import getenv
@@ -31,18 +31,16 @@ class EC2:
 
             # AWS EC2 Dynamic Variables
             resource_name                   = ec2_instance_name
-            resource_number_of_instances    = ec2_instance_configuration["number_of_instances"]
-            resource_namespace              = ec2_instance_configuration["namespace"]
-            resource_environment            = ec2_instance_configuration["environment"]
-            resource_ami                    = ec2_instance_configuration["ami"]
-            resource_instance_type          = ec2_instance_configuration["instance_type"]
-            resource_subnet                 = ec2_instance_configuration["subnet"]
-            resource_security_groups        = ec2_instance_configuration["security_groups"]
-            resource_root_disk_volume_type  = ec2_instance_configuration["root_disk"]["volume_type"]
-            resource_root_disk_volume_size  = ec2_instance_configuration["root_disk"]["volume_size"]
-            resource_public_ipv4_address    = ec2_instance_configuration["public_ipv4_address"]
-            resource_keypair                = ec2_instance_configuration["ssh_key"]
-            resource_user_data              = ec2_instance_configuration["user_data"]
+            resource_number_of_instances    = ec2_instance_configuration["number_of_instances"]         if "number_of_instances"    in ec2_instance_configuration else None
+            resource_ami                    = ec2_instance_configuration["ami"]                         if "ami"                    in ec2_instance_configuration else None
+            resource_instance_type          = ec2_instance_configuration["instance_type"]               if "instance_type"          in ec2_instance_configuration else None
+            resource_subnet                 = ec2_instance_configuration["subnet"]                      if "subnet"                 in ec2_instance_configuration else None
+            resource_security_groups        = ec2_instance_configuration["security_groups"]             if "security_groups"        in ec2_instance_configuration else None
+            resource_root_disk_volume_type  = ec2_instance_configuration["root_disk"]["volume_type"]    if "volume_type"            in ec2_instance_configuration["root_disk"] else None
+            resource_root_disk_volume_size  = ec2_instance_configuration["root_disk"]["volume_size"]    if "volume_size"            in ec2_instance_configuration["root_disk"] else None
+            resource_public_ipv4_address    = ec2_instance_configuration["public_ipv4_address"]         if "public_ipv4_address"    in ec2_instance_configuration else None
+            resource_keypair                = ec2_instance_configuration["ssh_key"]                     if "ssh_key"                in ec2_instance_configuration else None
+            resource_user_data              = ec2_instance_configuration["user_data"]                   if "user_data"              in ec2_instance_configuration else None
 
             resource_tags                   = None
             resource_tags                   = ec2_instance_configuration["tags"] if "tags" in ec2_instance_configuration else None
@@ -59,7 +57,12 @@ class EC2:
             tags_list.update(resource_mandatory_tags)
 
             this_subnet                     = aws_subnet_id[str(resource_subnet)]
-            this_keypair                    = aws_keypair_id[str(resource_keypair)]
+
+            # Check if the KeyPair is provided or not
+            if resource_keypair is None:
+                this_keypair = None
+            else:
+                this_keypair                    = aws_keypair_id[str(resource_keypair)]
 
             security_groups_list            = []
 
