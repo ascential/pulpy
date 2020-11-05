@@ -63,6 +63,15 @@ class LoadBalancer:
             for each_security_group_found in resource_security_groups:
                 resource_security_groups_list.append(aws_sg_id[str(each_security_group_found)])
 
+            if resource_exposure is not None:
+                if resource_exposure == "internal":
+                    resource_exposure = "false"
+                elif resource_exposure == "external":
+                    resource_exposure = "true"
+                else:
+                    resource_exposure = None
+
+
             # FIXME:
             # This needs to be reviewed as currently the subnets
             # are being added in a non-dynamic fashion
@@ -85,6 +94,7 @@ class LoadBalancer:
                 ],
 
                 security_groups     = resource_security_groups_list,
+                internal            = resource_exposure,
                 tags                = tags_list
 
                 )
