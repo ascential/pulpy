@@ -171,6 +171,7 @@ class LoadBalancer:
             # Export the name of each Instance Target Group
             pulumi.export(resource_name, target_group.id)
 
+            # Target Group Attachments / Targets
             target_group_attachment_index = 0
             for each_tg_instance in target_group_configuration["instances"]:
 
@@ -183,7 +184,7 @@ class LoadBalancer:
                     (resource_name + "-at-" + str(target_group_attachment_index)),
                     target_group_arn    = target_group.arn,
                     target_id           = this_ec2,
-                    port                = 80
+                    port                = resource_port
 
                 )
 
