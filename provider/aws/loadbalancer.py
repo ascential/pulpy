@@ -63,11 +63,12 @@ class LoadBalancer:
             for each_security_group_found in resource_security_groups:
                 resource_security_groups_list.append(aws_sg_id[str(each_security_group_found)])
 
+            # Check ALB exposure, being "internal" (private) or "external" (internet-facing)
             if resource_exposure is not None:
                 if resource_exposure == "internal":
-                    resource_exposure = "false"
+                    resource_exposure is False
                 elif resource_exposure == "external":
-                    resource_exposure = "true"
+                    resource_exposure is True
                 else:
                     resource_exposure = None
 
@@ -94,7 +95,7 @@ class LoadBalancer:
                 ],
 
                 security_groups     = resource_security_groups_list,
-                internal            = resource_exposure,
+                internal            = bool(resource_exposure),
                 tags                = tags_list
 
                 )
