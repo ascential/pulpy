@@ -15,7 +15,7 @@ resource_mandatory_tags = Mandatory.Tags()
 
 # Resource dictionaries
 subnet_ids_dict         = {}
-subnetscidrblocks_dict  = {}
+subnet_cidr_blocks_dict  = {}
 
 class Subnets:
 
@@ -67,7 +67,7 @@ class Subnets:
             )
 
             subnet_ids_dict.update({subnet._name: subnet.id})
-            subnetscidrblocks_dict.update({subnet._name: subnet.cidr_block})
+            subnet_cidr_blocks_dict.update({subnet._name: subnet.cidr_block})
 
             # Exporting each subnet created for future reference
             pulumi.export(subnet._name, subnet.id)
@@ -78,4 +78,4 @@ class Subnets:
 
     @classmethod
     def getSubnetCidrBlock(cls):
-        return subnetscidrblocks_dict
+        return subnet_cidr_blocks_dict
