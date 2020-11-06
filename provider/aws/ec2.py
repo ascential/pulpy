@@ -143,7 +143,11 @@ class EC2:
                             additional_disk_name,
                             availability_zone   = additional_disk_config_az,
                             type                = additional_disk_config_type,
-                            size                = additional_disk_config_size
+                            size                = additional_disk_config_size,
+
+                            tags                = {
+                                "Name": additional_disk_name,
+                            }
 
                         )
 
