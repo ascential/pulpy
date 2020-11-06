@@ -24,7 +24,6 @@ class EC2:
 
         resource_specs  = ParseYAML(resource_type).getSpecs()
         aws_subnet_id   = Subnets.SubnetId()
-        aws_subnet_az   = Subnets.SubnetAZ()
         aws_sg_id       = SecurityGroups.SecurityGroupId()
         aws_keypair_id  = KeyPairs.KeyPairId()
 
@@ -115,13 +114,9 @@ class EC2:
 
                         if additional_disk_name is not None:
 
-                            # Getting the EC2 Subnet AZ, this will be used
-                            # as the default in case none is provided
-                            ec2_subnet_az = aws_subnet_az[str(resource_subnet)]
-
                             # Setting up the default values
                             # for each individual EBS volume
-                            default_additional_disk_config_az   = ec2_subnet_az
+                            default_additional_disk_config_az   = ec2_instance.availability_zone
                             default_additional_disk_config_type = "gp2"
                             default_additional_disk_config_size = 20
 
