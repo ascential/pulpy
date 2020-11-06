@@ -107,6 +107,10 @@ class EC2:
 
                 if resource_additional_disks is not None:
 
+                    # This variable is used down below
+                    # by Volume Attachment
+                    additional_disks_found = 0
+
                     for additional_disk_name, additional_disk_config in resource_additional_disks.items():
 
                         if additional_disk_name is not None:
@@ -135,11 +139,32 @@ class EC2:
 
                         # Create EBS Volume
                         ebs_volume = ebs.Volume(
+
                             additional_disk_name,
                             availability_zone   = additional_disk_config_az,
                             type                = additional_disk_config_type,
                             size                = additional_disk_config_size
+
                         )
+
+                        #
+                        # EBS Volume Attachment
+                        #
+
+                        additional_disks_letter         = range(98, 123) # Getting a letter between 'b' and 'z'
+                        additional_disk_assigned_letter = additional_disks_letter[additional_disks_found]
+                        additional_disk_device_lettet   = "/dev/sd{:c}".format(additional_disk_assigned_letter)
+
+                        ebs_attachment = ec2.VolumeAttachment(
+
+                            (additional_disk_name + "-attachment"),
+                            device_name = additional_disk_device_lettet,
+                            volume_id   = ebs_volume.id,
+                            instance_id = ec2_instance.id
+
+                        )
+
+                        additional_disks_found = additional_disks_found + 1
 
                 # Update resource dictionaries
                 ec2_ids_dict.update({ec2_instance._name: ec2_instance.id})
