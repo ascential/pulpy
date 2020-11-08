@@ -170,15 +170,19 @@ class EC2:
                 ec2_ids_dict.update({ec2_instance._name: ec2_instance.id})
 
                 # Export the name of each EC2 Instance
-                pulumi.export(
-
-                    ec2_instance._name, {
-
-                        ("Instance ID", ec2_instance.id),
-                        ("Pwd", ec2_instance.password_data),
-                        ("ARN ", ec2_instance.arn)
-
-                    }
+                pulumi.export(ec2_instance._name,
+                    [
+                        {
+                            "ID"                    : ec2_instance.id,
+                            "ARN"                   : ec2_instance.arn,
+                            "State"                 : ec2_instance.instance_state,
+                            "Password (Windows)"    : ec2_instance.password_data,
+                            "Private DNS"           : ec2_instance.private_dns,
+                            "Public DNS"            : ec2_instance.public_dns,
+                            "Public IP"             : ec2_instance.public_ip,
+                            "Primary ENI"           : ec2_instance.primary_network_interface_id
+                        }
+                    ]
                 )
 
     @classmethod
