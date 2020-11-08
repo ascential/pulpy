@@ -96,6 +96,7 @@ class EC2:
                         "volume_size" : resource_root_disk_volume_size
                     },
                     user_data                   = resource_user_data,
+                    # get_password_data           = True,
                     tags                        = tags_list
 
                 )
@@ -169,7 +170,16 @@ class EC2:
                 ec2_ids_dict.update({ec2_instance._name: ec2_instance.id})
 
                 # Export the name of each EC2 Instance
-                pulumi.export(ec2_instance._name, ec2_instance.id)
+                pulumi.export(
+
+                    ec2_instance._name, {
+
+                        ("Instance ID", ec2_instance.id),
+                        ("Pwd", ec2_instance.password_data),
+                        ("ARN ", ec2_instance.arn)
+
+                    }
+                )
 
     @classmethod
     def EC2Id(cls):
