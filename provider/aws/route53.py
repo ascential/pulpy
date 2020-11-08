@@ -72,11 +72,13 @@ class Route53:
 
             pulumi.export(
                 resource_name,
-                (
-                    route53_public_zone.id,
-                    route53_public_zone.name_servers,
-                    route53_public_zone.zone_id,
-                )
+                    [
+                        {
+                            "ID"            : route53_public_zone.id,
+                            "Name servers"  : route53_public_zone.name_servers,
+                            "Zone ID"       : route53_public_zone.zone_id
+                        }
+                    ]
             )
 
             route53_public_zone_ids_dict.update({route53_public_zone._name: route53_public_zone.id})
@@ -249,10 +251,12 @@ class Route53:
 
             pulumi.export(
                 resource_name,
-                (
-                    route53_record.id,
-                    route53_record.fqdn
-                )
+                    [
+                        {
+                            "ID"    : route53_record.id,
+                            "FQDN"  : route53_record.fqdn
+                        }
+                    ]
             )
 
             route53_record_ids_dict.update({route53_record._name: route53_record.id})
