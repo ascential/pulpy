@@ -42,6 +42,7 @@ class EC2:
             resource_public_ipv4_address    = ec2_instance_configuration["public_ipv4_address"]         if "public_ipv4_address"    in ec2_instance_configuration else None
             resource_keypair                = ec2_instance_configuration["ssh_key"]                     if "ssh_key"                in ec2_instance_configuration else None
             resource_user_data              = ec2_instance_configuration["user_data"]                   if "user_data"              in ec2_instance_configuration else None
+            resource_password_data          = ec2_instance_configuration["password"]                    if "password"               in ec2_instance_configuration else None
 
             resource_tags                   = None
             resource_tags                   = ec2_instance_configuration["tags"] if "tags" in ec2_instance_configuration else None
@@ -96,7 +97,7 @@ class EC2:
                         "volume_size" : resource_root_disk_volume_size
                     },
                     user_data                   = resource_user_data,
-                    # get_password_data           = True,
+                    get_password_data           = resource_password_data,
                     tags                        = tags_list
 
                 )
