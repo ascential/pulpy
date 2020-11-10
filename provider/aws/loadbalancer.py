@@ -12,7 +12,7 @@ from aws.securitygroup  import SecurityGroups
 from aws.ec2            import EC2
 
 # General variables
-resource_type           = "lb"
+resource_type           = "loadbalancer"
 resource_project        = getenv('IAC__PROJECT_ID')
 resource_mandatory_tags = Mandatory.Tags()
 
@@ -37,8 +37,9 @@ class LoadBalancer:
             # AWS ALB Dynamic Variables
             resource_specific_type      = "alb"
             resource_name               = alb_name
-            resource_subnets            = alb_configuration["subnets"]
-            resource_security_groups    = alb_configuration["security_groups"]
+            resource_subnets            = alb_configuration["subnets"]          if "subnets"            in alb_configuration else None
+            resource_security_groups    = alb_configuration["security_groups"]  if "security_groups"    in alb_configuration else None
+            resource_exposure           = alb_configuration["exposure"]         if "exposure"           in alb_configuration else None
 
             resource_tags               = None
             resource_tags               = alb_configuration["tags"] if "tags" in alb_configuration else None
@@ -62,6 +63,16 @@ class LoadBalancer:
             for each_security_group_found in resource_security_groups:
                 resource_security_groups_list.append(aws_sg_id[str(each_security_group_found)])
 
+            # Check ALB exposure, being "internal" (private) or "external" (internet-facing)
+            if resource_exposure is not None:
+                if resource_exposure == "internal":
+                    resource_exposure is False
+                elif resource_exposure == "external":
+                    resource_exposure is True
+                else:
+                    resource_exposure = None
+
+
             # FIXME:
             # This needs to be reviewed as currently the subnets
             # are being added in a non-dynamic fashion
@@ -84,6 +95,7 @@ class LoadBalancer:
                 ],
 
                 security_groups     = resource_security_groups_list,
+                internal            = bool(resource_exposure),
                 tags                = tags_list
 
                 )
@@ -159,6 +171,7 @@ class LoadBalancer:
             # Export the name of each Instance Target Group
             pulumi.export(resource_name, target_group.id)
 
+            # Target Group Attachments / Targets
             target_group_attachment_index = 0
             for each_tg_instance in target_group_configuration["instances"]:
 
@@ -171,7 +184,7 @@ class LoadBalancer:
                     (resource_name + "-at-" + str(target_group_attachment_index)),
                     target_group_arn    = target_group.arn,
                     target_id           = this_ec2,
-                    port                = 80
+                    port                = resource_port
 
                 )
 

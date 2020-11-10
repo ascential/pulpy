@@ -1,8 +1,8 @@
-import  pulumi, yaml
+import  pulumi
 
 from    sys         import path
 from    os          import getenv
-from    pulumi_aws  import ec2
+from    pulumi_aws  import ec2, ebs
 
 from parse              import ParseYAML
 from aws.mandatory      import Mandatory
@@ -31,18 +31,18 @@ class EC2:
 
             # AWS EC2 Dynamic Variables
             resource_name                   = ec2_instance_name
-            resource_number_of_instances    = ec2_instance_configuration["number_of_instances"]
-            resource_namespace              = ec2_instance_configuration["namespace"]
-            resource_environment            = ec2_instance_configuration["environment"]
-            resource_ami                    = ec2_instance_configuration["ami"]
-            resource_instance_type          = ec2_instance_configuration["instance_type"]
-            resource_subnet                 = ec2_instance_configuration["subnet"]
-            resource_security_groups        = ec2_instance_configuration["security_groups"]
-            resource_root_disk_volume_type  = ec2_instance_configuration["root_disk"]["volume_type"]
-            resource_root_disk_volume_size  = ec2_instance_configuration["root_disk"]["volume_size"]
-            resource_public_ipv4_address    = ec2_instance_configuration["public_ipv4_address"]
-            resource_keypair                = ec2_instance_configuration["ssh_key"]
-            resource_user_data              = ec2_instance_configuration["user_data"]
+            resource_number_of_instances    = ec2_instance_configuration["number_of_instances"]         if "number_of_instances"    in ec2_instance_configuration else None
+            resource_ami                    = ec2_instance_configuration["ami"]                         if "ami"                    in ec2_instance_configuration else None
+            resource_instance_type          = ec2_instance_configuration["instance_type"]               if "instance_type"          in ec2_instance_configuration else None
+            resource_subnet                 = ec2_instance_configuration["subnet"]                      if "subnet"                 in ec2_instance_configuration else None
+            resource_security_groups        = ec2_instance_configuration["security_groups"]             if "security_groups"        in ec2_instance_configuration else None
+            resource_root_disk_volume_type  = ec2_instance_configuration["root_disk"]["volume_type"]    if "volume_type"            in ec2_instance_configuration["root_disk"] else None
+            resource_root_disk_volume_size  = ec2_instance_configuration["root_disk"]["volume_size"]    if "volume_size"            in ec2_instance_configuration["root_disk"] else None
+            resource_additional_disks       = ec2_instance_configuration["additional_disks"]            if "additional_disks"       in ec2_instance_configuration else None
+            resource_public_ipv4_address    = ec2_instance_configuration["public_ipv4_address"]         if "public_ipv4_address"    in ec2_instance_configuration else None
+            resource_keypair                = ec2_instance_configuration["ssh_key"]                     if "ssh_key"                in ec2_instance_configuration else None
+            resource_user_data              = ec2_instance_configuration["user_data"]                   if "user_data"              in ec2_instance_configuration else None
+            resource_password_data          = ec2_instance_configuration["password"]                    if "password"               in ec2_instance_configuration else None
 
             resource_tags                   = None
             resource_tags                   = ec2_instance_configuration["tags"] if "tags" in ec2_instance_configuration else None
@@ -58,13 +58,17 @@ class EC2:
             tags_list.update({"Project/Stack": pulumi.get_project() + "/" + pulumi.get_stack()})
             tags_list.update(resource_mandatory_tags)
 
-            this_subnet                     = aws_subnet_id[str(resource_subnet)]
-            this_keypair                    = aws_keypair_id[str(resource_keypair)]
+            this_subnet = aws_subnet_id[str(resource_subnet)]
 
-            security_groups_list            = []
+            # Check if the KeyPair is provided or not
+            if resource_keypair is None:
+                this_keypair = None
+            else:
+                this_keypair = aws_keypair_id[str(resource_keypair)]
 
+            # Getting the list of security groups found
+            security_groups_list = []
             for each_security_group_found in resource_security_groups:
-
                 this_security_group = aws_sg_id[str(each_security_group_found)]
                 security_groups_list.append(this_security_group)
 
@@ -75,7 +79,10 @@ class EC2:
                 else:
                     resource_final_name = resource_name
 
+                #
                 # Create EC2
+                #
+
                 ec2_instance                    = ec2.Instance(
 
                     resource_final_name,
@@ -90,15 +97,94 @@ class EC2:
                         "volume_size" : resource_root_disk_volume_size
                     },
                     user_data                   = resource_user_data,
+                    get_password_data           = resource_password_data,
                     tags                        = tags_list
 
                 )
+
+                #
+                # Additional Disks (EBS Volumes)
+                #
+
+                if resource_additional_disks is not None:
+
+                    # This variable is used down below
+                    # by Volume Attachment
+                    additional_disks_found = 0
+
+                    for additional_disk_name, additional_disk_config in resource_additional_disks.items():
+
+                        if additional_disk_name is not None:
+
+                            # Setting up the default values
+                            # for each individual EBS volume
+                            default_additional_disk_config_az   = ec2_instance.availability_zone
+                            default_additional_disk_config_type = "gp2"
+                            default_additional_disk_config_size = 20
+
+                            if additional_disk_config is not None:
+
+                                additional_disk_config_az   = additional_disk_config["availability_zone"]   if "availability_zone"  in additional_disk_config else default_additional_disk_config_az
+                                additional_disk_config_type = additional_disk_config["volume_type"]         if "volume_type"        in additional_disk_config else default_additional_disk_config_type
+                                additional_disk_config_size = additional_disk_config["volume_size"]         if "volume_size"        in additional_disk_config else default_additional_disk_config_size
+
+                            else:
+
+                                additional_disk_config_az   = default_additional_disk_config_az
+                                additional_disk_config_type = default_additional_disk_config_type
+                                additional_disk_config_size = default_additional_disk_config_size
+
+                        # Create EBS Volume
+                        ebs_volume = ebs.Volume(
+
+                            additional_disk_name,
+                            availability_zone   = additional_disk_config_az,
+                            type                = additional_disk_config_type,
+                            size                = additional_disk_config_size,
+
+                            tags                = {
+                                "Name": additional_disk_name,
+                            }
+
+                        )
+
+                        #
+                        # EBS Volume Attachment
+                        #
+
+                        additional_disks_letter         = range(98, 123) # Getting a letter between 'b' and 'z'
+                        additional_disk_assigned_letter = additional_disks_letter[additional_disks_found]
+                        additional_disk_device_lettet   = "/dev/sd{:c}".format(additional_disk_assigned_letter)
+
+                        ebs_attachment = ec2.VolumeAttachment(
+
+                            (additional_disk_name + "-attachment"),
+                            device_name = additional_disk_device_lettet,
+                            volume_id   = ebs_volume.id,
+                            instance_id = ec2_instance.id
+
+                        )
+
+                        additional_disks_found = additional_disks_found + 1
 
                 # Update resource dictionaries
                 ec2_ids_dict.update({ec2_instance._name: ec2_instance.id})
 
                 # Export the name of each EC2 Instance
-                pulumi.export(ec2_instance._name, ec2_instance.id)
+                pulumi.export(ec2_instance._name,
+                    [
+                        {
+                            "ID"                    : ec2_instance.id,
+                            "ARN"                   : ec2_instance.arn,
+                            "State"                 : ec2_instance.instance_state,
+                            "Password (Windows)"    : ec2_instance.password_data,
+                            "Private DNS"           : ec2_instance.private_dns,
+                            "Public DNS"            : ec2_instance.public_dns,
+                            "Public IP"             : ec2_instance.public_ip,
+                            "Primary ENI"           : ec2_instance.primary_network_interface_id
+                        }
+                    ]
+                )
 
     @classmethod
     def EC2Id(cls):
