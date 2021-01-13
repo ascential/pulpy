@@ -15,6 +15,7 @@ from aws.subnet         import Subnets
 from aws.securitygroup  import SecurityGroups
 
 # General variables
+config                  = pulumi.Config()
 resource_type           = "rds"
 resource_project        = getenv('IAC__PROJECT_ID')
 resource_mandatory_tags = Mandatory.Tags()
@@ -57,6 +58,9 @@ class RDS:
                     this_subnet_group               = aws_rds_subnet_group_id[str(resource_subnet_group)]
                     # these_security_groups           = aws_sg_id[str(resource_security_groups)]
 
+                    # Get the password from Pulumi Config
+                    resource_retrieved_password = config.require_secret(resource_password)
+
                     for each_security_group_found in resource_security_groups:
                         resource_security_groups_list.append(aws_sg_id[str(each_security_group_found)])
 
@@ -73,7 +77,7 @@ class RDS:
                         vpc_security_group_ids  = resource_security_groups_list,
                         name                    = resource_database_name,
                         username                = resource_username,
-                        password                = resource_password
+                        password                = resource_retrieved_password
 
                         )
 

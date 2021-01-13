@@ -10,6 +10,7 @@ from aws.subnet         import Subnets
 from aws.securitygroup  import SecurityGroups
 
 # General variables
+config                  = pulumi.Config()
 resource_type           = "documentdb"
 resource_project        = getenv('IAC__PROJECT_ID')
 resource_mandatory_tags = Mandatory.Tags()
@@ -57,6 +58,9 @@ class DocumentDB:
 
             security_groups_list                    = []
 
+            # Get the password from Pulumi Config
+            resource_retrieved_password = config.require_secret(resource_master_password)
+
             # Getting list of tags from configuration file
             tags_list = {}
             if resource_tags is not None:
@@ -85,7 +89,7 @@ class DocumentDB:
                 vpc_security_group_ids          = security_groups_list,
                 port                            = resource_port,
                 master_username                 = resource_master_username,
-                master_password                 = resource_master_password,
+                master_password                 = resource_retrieved_password,
                 backup_retention_period         = resource_backup_retention_period,
                 preferred_backup_window         = resource_preferred_backup_window,
                 preferred_maintenance_window    = resource_preferred_maintenance_window,
