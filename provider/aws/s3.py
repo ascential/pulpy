@@ -37,14 +37,16 @@ class S3:
             tags_list.update({"Project/Stack": pulumi.get_project() + "/" + pulumi.get_stack()})
             tags_list.update(resource_mandatory_tags)
 
+            sse_config = s3_bucket_configuration["serverSideEncryptionConfiguration"] if "serverSideEncryptionConfiguration" in s3_bucket_configuration else None
+
             # Create S3s
             bucket              = s3.Bucket(
 
                 resource_name,
                 acl             = s3_bucket_configuration["acl"],
                 force_destroy   = s3_bucket_configuration["force-destroy"],
-                tags            = tags_list
-
+                tags            = tags_list,
+                server_side_encryption_configuration = sse_config
             )
 
             # Export
