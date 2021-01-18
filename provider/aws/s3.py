@@ -45,7 +45,7 @@ class S3:
                 resource_name,
                 acl             = s3_bucket_configuration["acl"],
                 force_destroy   = s3_bucket_configuration["force-destroy"],
-                tags            = tags_list
+                tags            = tags_list,
                 server_side_encryption_configuration = sse_config
             )
 
