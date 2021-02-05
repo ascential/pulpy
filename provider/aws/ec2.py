@@ -36,6 +36,7 @@ class EC2:
             resource_instance_type          = ec2_instance_configuration["instance_type"]               if "instance_type"          in ec2_instance_configuration else None
             resource_subnet                 = ec2_instance_configuration["subnet"]                      if "subnet"                 in ec2_instance_configuration else None
             resource_security_groups        = ec2_instance_configuration["security_groups"]             if "security_groups"        in ec2_instance_configuration else None
+            resource_ebs_optimization       = ec2_instance_configuration["ebs_optimization"]            if "ebs_optimization"       in ec2_instance_configuration else None
             resource_root_disk_volume_type  = ec2_instance_configuration["root_disk"]["volume_type"]    if "volume_type"            in ec2_instance_configuration["root_disk"] else None
             resource_root_disk_volume_size  = ec2_instance_configuration["root_disk"]["volume_size"]    if "volume_size"            in ec2_instance_configuration["root_disk"] else None
             resource_additional_disks       = ec2_instance_configuration["additional_disks"]            if "additional_disks"       in ec2_instance_configuration else None
@@ -92,6 +93,7 @@ class EC2:
                     subnet_id                   = this_subnet,
                     vpc_security_group_ids      = security_groups_list,
                     key_name                    = this_keypair,
+                    ebs_optimized               = resource_ebs_optimization,
                     root_block_device           = {
                         "volume_type" : resource_root_disk_volume_type,
                         "volume_size" : resource_root_disk_volume_size
