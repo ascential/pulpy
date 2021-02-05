@@ -37,11 +37,13 @@ class LoadBalancer:
             # AWS ALB Dynamic Variables
             resource_specific_type          = "alb"
             resource_name                   = alb_name
-            resource_subnets                = alb_configuration["subnets"]              if "subnets"            in alb_configuration else None
-            resource_security_groups        = alb_configuration["security_groups"]      if "security_groups"    in alb_configuration else None
-            resource_deletion_protection    = alb_configuration["deletion_protection"]  if "deletion_protection"           in alb_configuration else None
-            resource_exposure               = alb_configuration["exposure"]             if "exposure"           in alb_configuration else None
-            resource_listeners              = alb_configuration["listeners"]            if "listeners"          in alb_configuration else None
+            resource_subnets                = alb_configuration["subnets"]              if "subnets"                in alb_configuration else None
+            resource_security_groups        = alb_configuration["security_groups"]      if "security_groups"        in alb_configuration else None
+            resource_deletion_protection    = alb_configuration["deletion_protection"]  if "deletion_protection"    in alb_configuration else None
+            resource_exposure               = alb_configuration["exposure"]             if "exposure"               in alb_configuration else None
+            resource_http2                  = alb_configuration["http2"]                if "http2"                  in alb_configuration else None
+            resource_idle_timeout           = alb_configuration["idle_timeout"]         if "idle_timeout"           in alb_configuration else None
+            resource_listeners              = alb_configuration["listeners"]            if "listeners"              in alb_configuration else None
 
             resource_tags                   = None
             resource_tags                   = alb_configuration["tags"] if "tags" in alb_configuration else None
@@ -116,6 +118,8 @@ class LoadBalancer:
                 security_groups     = resource_security_groups_list,
                 enable_deletion_protection = resource_deletion_protection,
                 internal            = bool(resource_exposure),
+                enable_http2        = resource_http2,
+                idle_timeout        = resource_idle_timeout,
                 tags                = tags_list
 
                 )
