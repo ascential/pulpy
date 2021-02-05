@@ -22,9 +22,9 @@ target_group_ids_dict   = {}
 
 class LoadBalancer:
 
-    #
-    # Application Load Balancer
-    #
+#
+# Application Load Balancer
+#
 
     def ALB(self):
 
@@ -35,14 +35,16 @@ class LoadBalancer:
         for alb_name, alb_configuration in resource_specs["alb"].items():
 
             # AWS ALB Dynamic Variables
-            resource_specific_type      = "alb"
-            resource_name               = alb_name
-            resource_subnets            = alb_configuration["subnets"]          if "subnets"            in alb_configuration else None
-            resource_security_groups    = alb_configuration["security_groups"]  if "security_groups"    in alb_configuration else None
-            resource_exposure           = alb_configuration["exposure"]         if "exposure"           in alb_configuration else None
+            resource_specific_type          = "alb"
+            resource_name                   = alb_name
+            resource_subnets                = alb_configuration["subnets"]              if "subnets"            in alb_configuration else None
+            resource_security_groups        = alb_configuration["security_groups"]      if "security_groups"    in alb_configuration else None
+            resource_deletion_protection    = alb_configuration["deletion_protection"]  if "deletion_protection"           in alb_configuration else None
+            resource_exposure               = alb_configuration["exposure"]             if "exposure"           in alb_configuration else None
+            resource_listeners              = alb_configuration["listeners"]            if "listeners"          in alb_configuration else None
 
-            resource_tags               = None
-            resource_tags               = alb_configuration["tags"] if "tags" in alb_configuration else None
+            resource_tags                   = None
+            resource_tags                   = alb_configuration["tags"] if "tags" in alb_configuration else None
 
             # Getting list of tags from configuration file
             tags_list = {}
@@ -63,7 +65,9 @@ class LoadBalancer:
             for each_security_group_found in resource_security_groups:
                 resource_security_groups_list.append(aws_sg_id[str(each_security_group_found)])
 
-            # Check ALB exposure, being "internal" (private) or "external" (internet-facing)
+            # ALB exposure [internal|external]
+            # - internal for private connections (VPN, TGW etc.)
+            # - external for internet-facing / publicly exposed load balancers
             if resource_exposure is not None:
                 if resource_exposure == "internal":
                     resource_exposure is False
@@ -71,6 +75,21 @@ class LoadBalancer:
                     resource_exposure is True
                 else:
                     resource_exposure = None
+
+
+            # NOTE: Work in progress
+
+            # Listeners [http|https]
+            # if resource_listeners is not None:
+            #     # print("Found listeners")
+            #     for listener_protocol in resource_listeners.items():
+            #         print(listener_protocol)
+            #         if listener_protocol[0] == "http":
+            #             print("HTTP Found")
+            #         elif listener_protocol[0] == "https":
+            #             print("HTTPS Found")
+            #         else:
+            #             print("No valid ALB listener found, must be 'http' or 'https'")
 
 
             # FIXME:
@@ -95,32 +114,33 @@ class LoadBalancer:
                 ],
 
                 security_groups     = resource_security_groups_list,
+                enable_deletion_protection = resource_deletion_protection,
                 internal            = bool(resource_exposure),
                 tags                = tags_list
 
                 )
 
-    #
-    # Classic Load Balancer
-    #
+#
+# Classic Load Balancer
+#
 
     @classmethod
     def CLB(self):
         pass
 
 
-    #
-    # Network Load Balancer
-    #
+#
+# Network Load Balancer
+#
 
     @classmethod
     def NLB(self):
         pass
 
 
-    #
-    # Target Group
-    #
+#
+# Target Group
+#
 
     @classmethod
     def TargetGroup(self):
