@@ -1,8 +1,10 @@
+# SECTION EC2 Module
+
 import  pulumi
 
-from    sys         import path
-from    os          import getenv
-from    pulumi_aws  import ec2, ebs
+from    sys             import path
+from os                 import getenv
+from pulumi_aws         import ec2, ebs, autoscaling
 
 from parse              import ParseYAML
 from aws.mandatory      import Mandatory
@@ -16,18 +18,25 @@ resource_project        = getenv('IAC__PROJECT_ID')
 resource_mandatory_tags = Mandatory.Tags()
 
 # Resource dictionary
-ec2_ids_dict = {}
+ec2_ids_dict    = {}
+lt_ids_dict     = {}
+asg_ids_dict    = {}
 
 class EC2:
 
-    def __init__(self):
+
+    # SECTION Instance
+    # This method is used to create EC2 Instances
+
+    @staticmethod
+    def Instance():
 
         resource_specs  = ParseYAML(resource_type).getSpecs()
         aws_subnet_id   = Subnets.SubnetId()
         aws_sg_id       = SecurityGroups.SecurityGroupId()
         aws_keypair_id  = KeyPairs.KeyPairId()
 
-        for ec2_instance_name, ec2_instance_configuration in resource_specs.items():
+        for ec2_instance_name, ec2_instance_configuration in resource_specs["instance"].items():
 
             # AWS EC2 Dynamic Variables
             resource_name                   = ec2_instance_name
@@ -62,9 +71,7 @@ class EC2:
             this_subnet = aws_subnet_id[str(resource_subnet)]
 
             # Check if the KeyPair is provided or not
-            if resource_keypair is None:
-                this_keypair = None
-            else:
+            if resource_keypair is not None:
                 this_keypair = aws_keypair_id[str(resource_keypair)]
 
             # Getting the list of security groups found
@@ -169,8 +176,15 @@ class EC2:
 
                         additional_disks_found = additional_disks_found + 1
 
+                # NOTE EC2 ID Dictionary
                 # Update resource dictionaries
                 ec2_ids_dict.update({ec2_instance._name: ec2_instance.id})
+
+                # NOTE Values Test
+                # Print statements below are used only for
+                # testing the functionality, can be ignored
+                # print("Instance name:", ec2_instance._name)
+                # print("Instance ID:", ec2_instance.id)
 
                 # Export the name of each EC2 Instance
                 pulumi.export(ec2_instance._name,
@@ -188,7 +202,204 @@ class EC2:
                     ]
                 )
 
-    @classmethod
-    def EC2Id(cls):
+        # NOTE Dictionary Test
+        # Print statements below are used only for
+        # testing the functionality, can be ignored
+        # print("Dictionary:", ec2_ids_dict)
+    # !SECTION
+
+    # SECTION Instance IDs
+    # Return gathered dictionaries
+    @staticmethod
+    def EC2Id():
 
         return ec2_ids_dict
+    # !SECTION
+
+    # SECTION Auto Scaling Group
+    @staticmethod
+    def AutoScalingGroup():
+
+        resource_specs          = ParseYAML(resource_type).getSpecs()
+        aws_subnet_id           = Subnets.SubnetId()
+        aws_launch_template_id  = EC2.LTId()
+
+        # Cheking if "auto-scaling-group:" is present in the configuration file
+        autoscaling_group = resource_specs["auto-scaling-group"].items() if "auto-scaling-group" in resource_specs else None
+
+        # If "auto-scaling-group:" is present then we'll run all the code below
+        if autoscaling_group is not None:
+
+            for autoscaling_group_name, autoscaling_group_configuration in autoscaling_group:
+
+                # AWS Autoscaling Group Dynamic Variables
+
+                # Resource Name
+                resource_name               = autoscaling_group_name
+
+                # Autoscaling Group Configuration and its Default values
+                resource_min_size           = autoscaling_group_configuration["min-size"]           if "min-size"           in autoscaling_group_configuration  else 1
+                resource_max_size           = autoscaling_group_configuration["max-size"]           if "max-size"           in autoscaling_group_configuration  else 1
+                resource_desired_capacity   = autoscaling_group_configuration["desired-capacity"]   if "desired-capacity"   in autoscaling_group_configuration  else 1
+                resource_subnets            = autoscaling_group_configuration["subnets"]            if "subnets"            in autoscaling_group_configuration  else None
+                # resource_capacity_rebalance = autoscaling_group_configuration["capacity-rebalance"] if "capacity-rebalance" in autoscaling_group_configuration  else False
+                resource_cooldown_period    = autoscaling_group_configuration["cooldown-period"]    if "cooldown-period"    in autoscaling_group_configuration  else 300
+                resource_health_check_type  = autoscaling_group_configuration["health-check-type"]  if "health-check-type"  in autoscaling_group_configuration  else None
+                resource_launch_template    = autoscaling_group_configuration["launch-template"]    if "launch-template"    in autoscaling_group_configuration  else None
+
+                # Resource Tags and its Default values
+                resource_tags               = None
+                resource_tags               = autoscaling_group_configuration["tags"]               if "tags"               in autoscaling_group_configuration  else None
+
+                # Getting list of tags from configuration file
+                tags_list               = {}
+                if resource_tags is not None:
+                    for each_tag_name, each_tag_value in resource_tags.items():
+                        tags_list.update({each_tag_name: each_tag_value})
+
+                # Adding mandatory tags
+                tags_list.update({"Name": resource_name})
+                tags_list.update({"Project/Stack": pulumi.get_project() + "/" + pulumi.get_stack()})
+                tags_list.update(resource_mandatory_tags)
+
+                # List of all Subnets gathered from "subnets:" key
+                resource_subnets_list = []
+
+                for each_subnet_found in resource_subnets:
+                    individual_subnet_id = aws_subnet_id[str(each_subnet_found)]
+                    resource_subnets_list.append(individual_subnet_id)
+
+
+                # Check if "launch-template" is provided or not
+                if resource_launch_template is not None:
+                    this_launch_template_id = aws_launch_template_id[str(resource_launch_template)]
+
+                # Create the Autoscaling Group
+                autoscaling_group = autoscaling.Group(
+
+                    autoscaling_group_name,
+                    # name                    = autoscaling_group_name,
+                    min_size                = resource_min_size,
+                    max_size                = resource_max_size,
+                    desired_capacity        = resource_desired_capacity,
+                    vpc_zone_identifiers    = resource_subnets_list,
+                    # capacity_rebalance  = resource_capacity_rebalance, - NOT available in this module version
+                    default_cooldown        = resource_cooldown_period,
+                    health_check_type       = resource_health_check_type,
+                    launch_template         = {
+                        "id": this_launch_template_id,
+                        },
+                    # tags                = tags_list,
+
+                )
+
+                # NOTE Auto Scaling Group ID Dictionary
+                # Update resource dictionaries
+                asg_ids_dict.update({autoscaling_group._name: autoscaling_group.id})
+
+    # !SECTION
+
+    # SECTION Auto Scaling Group IDs
+    # Return gathered dictionaries
+    @staticmethod
+    def ASGId():
+
+        return asg_ids_dict
+    # !SECTION
+
+    # SECTION Launch Template
+
+    @staticmethod
+    def LaunchTemplate():
+
+        resource_specs  = ParseYAML(resource_type).getSpecs()
+        aws_sg_id       = SecurityGroups.SecurityGroupId()
+        aws_keypair_id  = KeyPairs.KeyPairId()
+
+        # Cheking if "auto-scaling-group:" is present in the configuration file
+        launch_template = resource_specs["launch-template"].items() if "launch-template" in resource_specs else None
+
+        # If "auto-scaling-group:" is present then we'll run all the code below
+        if launch_template is not None:
+
+            # Loop through all Launch Templates defined
+            for launch_template_name, launch_template_configuration in launch_template:
+
+                # If there's any configuration then we'll execute the
+                # code below, else we'll pass the execution
+                if launch_template_configuration is not None:
+
+                    # AWS Launch Template Dynamic Variables
+
+                    # Resource Name
+                    resource_name                   = launch_template_name
+
+                    # AWS Launch Template configuration and its Default values
+                    resource_description            = launch_template_configuration["description"]              if "description"            in launch_template_configuration else None
+                    resource_instance_type          = launch_template_configuration["instance-type"]            if "instance-type"          in launch_template_configuration else None
+                    resource_ami                    = launch_template_configuration["ami"]                      if "ami"                    in launch_template_configuration else None
+                    resource_key                    = launch_template_configuration["key"]                      if "key"                    in launch_template_configuration else None
+                    resource_ebs_optimized          = launch_template_configuration["ebs-optimized"]            if "ebs-optimized"          in launch_template_configuration else True
+                    resource_termination_protection = launch_template_configuration["termination-protection"]   if "termination-protection" in launch_template_configuration else False
+                    resource_security_groups        = launch_template_configuration["security-groups"]          if "security-groups"        in launch_template_configuration else None
+                    resource_user_data              = launch_template_configuration["user-data"]                if "user-data"              in launch_template_configuration else None
+                    resource_update_default_version = launch_template_configuration["update-default-version"]   if "update-default-version" in launch_template_configuration else True
+
+                    # Resource Tags and its Default values
+                    resource_tags                   = None
+                    resource_tags                   = launch_template_configuration["tags"]                     if "tags"                   in launch_template_configuration else None
+
+                    # Getting list of tags from configuration file
+                    tags_list = {}
+                    if resource_tags is not None:
+                        for each_tag_name, each_tag_value in resource_tags.items():
+                            tags_list.update({each_tag_name: each_tag_value})
+
+                    # Adding mandatory tags
+                    tags_list.update({"Name": resource_name})
+                    tags_list.update({"Project/Stack": pulumi.get_project() + "/" + pulumi.get_stack()})
+                    tags_list.update(resource_mandatory_tags)
+
+                    # Check if the KeyPair is provided or not
+                    if resource_key is None:
+                        this_keypair = None
+                    else:
+                        this_keypair = aws_keypair_id[str(resource_key)]
+
+                    # Getting the list of security groups found
+                    security_groups_list = []
+                    for each_security_group_found in resource_security_groups:
+                        this_security_group = aws_sg_id[str(each_security_group_found)]
+                        security_groups_list.append(this_security_group)
+
+                    new_launch_template = ec2.LaunchTemplate(
+
+                        resource_name,
+                        description             = resource_description,
+                        instance_type           = resource_instance_type,
+                        image_id                = resource_ami,
+                        key_name                = this_keypair,
+                        ebs_optimized           = resource_ebs_optimized,
+                        disable_api_termination = resource_termination_protection,
+                        vpc_security_group_ids  = security_groups_list,
+                        user_data               = resource_user_data,
+                        tags                    = tags_list,
+                        update_default_version  = resource_update_default_version
+
+                    )
+
+                    # NOTE Launch Templates ID Dictionary
+                    # Update resource dictionaries
+                    lt_ids_dict.update({new_launch_template._name: new_launch_template.id})
+
+    # !SECTION
+
+    # SECTION Launch Template IDs
+    # Return gathered dictionaries
+    @staticmethod
+    def LTId():
+
+        return lt_ids_dict
+    # !SECTION
+
+# !SECTION
