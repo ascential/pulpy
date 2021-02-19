@@ -82,6 +82,8 @@ class EFS:
                 tags                = tags_list,
             )
 
+            # Return a list of all EFSs created
+            efs_ids_dict.update({efs_file_system._name: efs_file_system.id})
 
             # Create Target(s) based on the number of
             # Subnets found in the configuration file
@@ -100,3 +102,7 @@ class EFS:
                     subnet_id               = this_subnet,
                     security_groups         = security_groups_list
                 )
+
+    @staticmethod
+    def EFSId():
+        return efs_ids_dict
