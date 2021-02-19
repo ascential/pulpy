@@ -17,7 +17,8 @@ resource_mandatory_tags = Mandatory.Tags()
 
 class EKS:
 
-    def __init__(self):
+    @staticmethod
+    def Cluster():
 
         resource_specs      = ParseYAML(resource_type).getSpecs()
         aws_subnet_id       = Subnets.SubnetId()
