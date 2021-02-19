@@ -146,20 +146,18 @@ class EKS:
                 eks_node_group = eks.NodeGroup(
 
                     resource_nodegroup_name,
-                    cluster_name    = eks_cluster.name,
-                    node_group_name = resource_nodegroup_name,
-                    version         = resource_cluster_version,
-                    node_role_arn   = this_nodegroup_iam_role,
-                    subnet_ids      = eks_nodegroup_subnets_list,
-                    instance_types  = resource_nodegroup_instance_type,
-                    disk_size       = resource_nodegroup_instance_disk_size,
-                    scaling_config  = {
-
-                        'desired_size': resource_nodegroup_desired_size,
-                        'max_size': resource_nodegroup_max_size,
-                        'min_size': resource_nodegroup_min_size,
-
-                    },
+                    cluster_name        = eks_cluster.name,
+                    node_group_name     = resource_nodegroup_name,
+                    version             = resource_cluster_version,
+                    node_role_arn       = this_nodegroup_iam_role,
+                    subnet_ids          = eks_nodegroup_subnets_list,
+                    instance_types      = [resource_nodegroup_instance_type],
+                    disk_size           = resource_nodegroup_instance_disk_size,
+                    scaling_config      = eks.NodeGroupScalingConfigArgs(
+                        desired_size    = resource_nodegroup_desired_size,
+                        max_size        = resource_nodegroup_max_size,
+                        min_size        = resource_nodegroup_min_size,
+                    ),
                     tags            = nodegroup_tags_list
 
                 )
