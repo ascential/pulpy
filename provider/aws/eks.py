@@ -125,7 +125,7 @@ class EKS:
                 resource_tags                           = eks_nodegroup_configuration["tags"] if "tags" in eks_nodegroup_configuration else None
 
                 # Getting list of tags from configuration file
-                nodegroup_tags_list               = {}
+                nodegroup_tags_list = {}
                 if resource_tags is not None:
                     for each_tag_name, each_tag_value in resource_tags.items():
                         nodegroup_tags_list.update({each_tag_name: each_tag_value})
@@ -158,7 +158,7 @@ class EKS:
                         max_size        = resource_nodegroup_max_size,
                         min_size        = resource_nodegroup_min_size,
                     ),
-                    tags            = nodegroup_tags_list
+                    tags                = nodegroup_tags_list
 
                 )
 
