@@ -293,7 +293,6 @@ class EC2:
                 autoscaling_group = autoscaling.Group(
 
                     autoscaling_group_name,
-                    # name                    = autoscaling_group_name,
                     min_size                = resource_min_size,
                     max_size                = resource_max_size,
                     desired_capacity        = resource_desired_capacity,
@@ -305,10 +304,11 @@ class EC2:
                         "id": this_launch_template_id,
                         },
                     # NOT available using this module version
-                    instance_refresh        = {
-                        "strategy": "Rolling",
-                        "triggers": "launch_template"
-                        },
+                    instance_refresh        = autoscaling.GroupInstanceRefreshArgs(
+                        strategy = "Rolling",
+                        # This triggers Instance Refresh everytime invoked
+                        # triggers = ["launch_template"]
+                    ),
                     # tags                = tags_list,
                     # target_group_arns       = resource_target_group_arns
 
@@ -393,8 +393,9 @@ class EC2:
                         this_security_group = aws_sg_id[str(each_security_group_found)]
                         security_groups_list.append(this_security_group)
 
-                    # user_data_bytes   = resource_user_data.encode("utf-8")
-                    # user_data_base64  = b64encode(user_data_bytes)
+                    # Encode "user_data" to base64 format
+                    # Ref: https://stackoverflow.com/a/42759842
+                    user_data_base64 = b64encode(resource_user_data.encode("ascii")).decode("ascii")
 
                     new_launch_template = ec2.LaunchTemplate(
 
@@ -407,7 +408,7 @@ class EC2:
                         disable_api_termination = resource_termination_protection,
                         vpc_security_group_ids  = security_groups_list,
                         # It has to be base64 encoded
-                        # user_data               = b64encode(user_data_bytes),
+                        user_data               = user_data_base64,
                         tags                    = tags_list,
                         update_default_version  = resource_update_default_version
 
