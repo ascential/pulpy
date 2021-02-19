@@ -33,13 +33,13 @@ class EKS:
 
             # AWS EKS Cluster Dynamic Variables
             resource_cluster_name                       = eks_cluster_name
-            resource_cluster_version                    = eks_cluster_configuration["version"]
-            resource_cluster_role_arn                   = eks_cluster_configuration["role"]
-            resource_cluster_subnets                    = eks_cluster_configuration["subnets"]
-            resource_cluster_security_groups            = eks_cluster_configuration["security_groups"]
-            resource_cluster_endpoint_private_access    = eks_cluster_configuration["endpoint_private_access"]
-            resource_cluster_endpoint_public_access     = eks_cluster_configuration["endpoint_public_access"]
-            resource_cluster_public_access_cidrs        = eks_cluster_configuration["public_access_cidrs"]
+            resource_cluster_version                    = eks_cluster_configuration["version"]                  if "version"                    in eks_cluster_configuration else None
+            resource_cluster_role_arn                   = eks_cluster_configuration["role"]                     if "role"                       in eks_cluster_configuration else None
+            resource_cluster_subnets                    = eks_cluster_configuration["subnets"]                  if "subnets"                    in eks_cluster_configuration else None
+            resource_cluster_security_groups            = eks_cluster_configuration["security_groups"]          if "security_groups"            in eks_cluster_configuration else None
+            resource_cluster_endpoint_private_access    = eks_cluster_configuration["endpoint_private_access"]  if "endpoint_private_access"    in eks_cluster_configuration else None
+            resource_cluster_endpoint_public_access     = eks_cluster_configuration["endpoint_public_access"]   if "endpoint_public_access"     in eks_cluster_configuration else None
+            resource_cluster_public_access_cidrs        = eks_cluster_configuration["public_access_cidrs"]      if "public_access_cidrs"        in eks_cluster_configuration else None
 
             resource_cluster_tags                       = None
             resource_cluster_tags                       = eks_cluster_configuration["tags"] if "tags" in eks_cluster_configuration else None
@@ -113,13 +113,14 @@ class EKS:
 
                 # AWS EKS Node Group Dynamic Variables
                 resource_nodegroup_name                 = eks_nodegroup_name
-                resource_nodegroup_role_arn             = eks_nodegroup_configuration["role"]
-                resource_nodegroup_subnets              = eks_nodegroup_configuration["subnets"]
-                resource_nodegroup_instance_type        = eks_nodegroup_configuration["instance_type"]
-                resource_nodegroup_instance_disk_size   = eks_nodegroup_configuration["instance_disk_size"]
-                resource_nodegroup_desired_size         = eks_nodegroup_configuration["scaling"]["desired_size"]
-                resource_nodegroup_max_size             = eks_nodegroup_configuration["scaling"]["max_size"]
-                resource_nodegroup_min_size             = eks_nodegroup_configuration["scaling"]["min_size"]
+
+                resource_nodegroup_role_arn             = eks_nodegroup_configuration["role"]                       if "role"               in eks_nodegroup_configuration else None
+                resource_nodegroup_subnets              = eks_nodegroup_configuration["subnets"]                    if "subnets"            in eks_nodegroup_configuration else None
+                resource_nodegroup_instance_type        = eks_nodegroup_configuration["instance_type"]              if "instance_type"      in eks_nodegroup_configuration else None
+                resource_nodegroup_instance_disk_size   = eks_nodegroup_configuration["instance_disk_size"]         if "instance_disk_size" in eks_nodegroup_configuration else 40
+                resource_nodegroup_desired_size         = eks_nodegroup_configuration["scaling"]["desired_size"]    if "desired_size"       in eks_nodegroup_configuration["scaling"] else 3
+                resource_nodegroup_max_size             = eks_nodegroup_configuration["scaling"]["max_size"]        if "max_size"           in eks_nodegroup_configuration["scaling"] else 3
+                resource_nodegroup_min_size             = eks_nodegroup_configuration["scaling"]["min_size"]        if "min_size"           in eks_nodegroup_configuration["scaling"] else 3
 
                 resource_tags                           = None
                 resource_tags                           = eks_nodegroup_configuration["tags"] if "tags" in eks_nodegroup_configuration else None
@@ -135,10 +136,18 @@ class EKS:
                 nodegroup_tags_list.update({"Project/Stack": pulumi.get_project() + "/" + pulumi.get_stack()})
                 nodegroup_tags_list.update(resource_mandatory_tags)
 
+                # Getting the list of Instances for this NodeGroup
+                eks_nodegroup_instances_list = []
+                if resource_nodegroup_instance_type is not None:
+                    for each_nodegroup_instance in resource_nodegroup_instance_type:
+                        eks_nodegroup_instances_list.append(each_nodegroup_instance)
+
+
                 # Getting the list of subnets needed for EKS Node Group
                 eks_nodegroup_subnets_list = []
-                for each_eks_nodegroup_subnet in resource_nodegroup_subnets:
-                    eks_nodegroup_subnets_list.append(aws_subnet_id[str(each_eks_nodegroup_subnet)])
+                if resource_nodegroup_subnets is not None:
+                    for each_eks_nodegroup_subnet in resource_nodegroup_subnets:
+                        eks_nodegroup_subnets_list.append(aws_subnet_id[str(each_eks_nodegroup_subnet)])
 
                 # Get EKS Node Group IAM Role
                 this_nodegroup_iam_role         = aws_iam_role_arn[str(resource_nodegroup_role_arn)]
@@ -151,7 +160,7 @@ class EKS:
                     version             = resource_cluster_version,
                     node_role_arn       = this_nodegroup_iam_role,
                     subnet_ids          = eks_nodegroup_subnets_list,
-                    instance_types      = [resource_nodegroup_instance_type],
+                    instance_types      = eks_nodegroup_instances_list,
                     disk_size           = resource_nodegroup_instance_disk_size,
                     scaling_config      = eks.NodeGroupScalingConfigArgs(
                         desired_size    = resource_nodegroup_desired_size,
