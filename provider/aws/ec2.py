@@ -1,9 +1,11 @@
 # SECTION EC2 Module
 
-import  pulumi
+import base64
+import pulumi
 
-from    sys             import path
+from sys                import path
 from os                 import getenv
+from base64             import b64encode
 from pulumi_aws         import ec2, ebs, autoscaling
 
 from parse              import ParseYAML
@@ -11,6 +13,7 @@ from aws.mandatory      import Mandatory
 from aws.subnet         import Subnets
 from aws.securitygroup  import SecurityGroups
 from aws.keypair        import KeyPairs
+# from aws.loadbalancer   import LoadBalancer
 
 # General variables
 resource_type           = "ec2"
@@ -40,7 +43,7 @@ class EC2:
 
             # AWS EC2 Dynamic Variables
             resource_name                   = ec2_instance_name
-            resource_number_of_instances    = ec2_instance_configuration["number_of_instances"]         if "number_of_instances"    in ec2_instance_configuration else None
+            resource_number_of_instances    = ec2_instance_configuration["number_of_instances"]         if "number_of_instances"    in ec2_instance_configuration else 1
             resource_ami                    = ec2_instance_configuration["ami"]                         if "ami"                    in ec2_instance_configuration else None
             resource_instance_type          = ec2_instance_configuration["instance_type"]               if "instance_type"          in ec2_instance_configuration else None
             resource_subnet                 = ec2_instance_configuration["subnet"]                      if "subnet"                 in ec2_instance_configuration else None
@@ -209,11 +212,12 @@ class EC2:
     # !SECTION
 
     # SECTION Instance IDs
+
     # Return gathered dictionaries
     @staticmethod
     def EC2Id():
-
         return ec2_ids_dict
+
     # !SECTION
 
     # SECTION Auto Scaling Group
@@ -223,6 +227,7 @@ class EC2:
         resource_specs          = ParseYAML(resource_type).getSpecs()
         aws_subnet_id           = Subnets.SubnetId()
         aws_launch_template_id  = EC2.LTId()
+        # aws_target_group_arn    = LoadBalancer.TargetGroupArn()
 
         # Cheking if "auto-scaling-group:" is present in the configuration file
         autoscaling_group = resource_specs["auto-scaling-group"].items() if "auto-scaling-group" in resource_specs else None
@@ -242,10 +247,11 @@ class EC2:
                 resource_max_size           = autoscaling_group_configuration["max-size"]           if "max-size"           in autoscaling_group_configuration  else 1
                 resource_desired_capacity   = autoscaling_group_configuration["desired-capacity"]   if "desired-capacity"   in autoscaling_group_configuration  else 1
                 resource_subnets            = autoscaling_group_configuration["subnets"]            if "subnets"            in autoscaling_group_configuration  else None
-                # resource_capacity_rebalance = autoscaling_group_configuration["capacity-rebalance"] if "capacity-rebalance" in autoscaling_group_configuration  else False
+                resource_capacity_rebalance = autoscaling_group_configuration["capacity-rebalance"] if "capacity-rebalance" in autoscaling_group_configuration  else False
                 resource_cooldown_period    = autoscaling_group_configuration["cooldown-period"]    if "cooldown-period"    in autoscaling_group_configuration  else 300
                 resource_health_check_type  = autoscaling_group_configuration["health-check-type"]  if "health-check-type"  in autoscaling_group_configuration  else None
                 resource_launch_template    = autoscaling_group_configuration["launch-template"]    if "launch-template"    in autoscaling_group_configuration  else None
+                resource_target_groups      = autoscaling_group_configuration["target-groups"]      if "target-groups"      in autoscaling_group_configuration  else None
 
                 # Resource Tags and its Default values
                 resource_tags               = None
@@ -274,6 +280,15 @@ class EC2:
                 if resource_launch_template is not None:
                     this_launch_template_id = aws_launch_template_id[str(resource_launch_template)]
 
+                # FIXME It complains about circular import
+                # Check if "target-groups:" is provided or not
+                # resource_target_group_arns = []
+
+                # if resource_target_groups is not None:
+                #     individual_tg_arn = aws_target_group_arn[str(resource_target_groups)]
+                #     resource_target_group_arns.append(individual_tg_arn)
+
+
                 # Create the Autoscaling Group
                 autoscaling_group = autoscaling.Group(
 
@@ -283,13 +298,19 @@ class EC2:
                     max_size                = resource_max_size,
                     desired_capacity        = resource_desired_capacity,
                     vpc_zone_identifiers    = resource_subnets_list,
-                    # capacity_rebalance  = resource_capacity_rebalance, - NOT available in this module version
+                    capacity_rebalance      = resource_capacity_rebalance,
                     default_cooldown        = resource_cooldown_period,
                     health_check_type       = resource_health_check_type,
                     launch_template         = {
                         "id": this_launch_template_id,
                         },
+                    # NOT available using this module version
+                    instance_refresh        = {
+                        "strategy": "Rolling",
+                        "triggers": "launch_template"
+                        },
                     # tags                = tags_list,
+                    # target_group_arns       = resource_target_group_arns
 
                 )
 
@@ -372,6 +393,9 @@ class EC2:
                         this_security_group = aws_sg_id[str(each_security_group_found)]
                         security_groups_list.append(this_security_group)
 
+                    # user_data_bytes   = resource_user_data.encode("utf-8")
+                    # user_data_base64  = b64encode(user_data_bytes)
+
                     new_launch_template = ec2.LaunchTemplate(
 
                         resource_name,
@@ -382,7 +406,8 @@ class EC2:
                         ebs_optimized           = resource_ebs_optimized,
                         disable_api_termination = resource_termination_protection,
                         vpc_security_group_ids  = security_groups_list,
-                        user_data               = resource_user_data,
+                        # It has to be base64 encoded
+                        # user_data               = b64encode(user_data_bytes),
                         tags                    = tags_list,
                         update_default_version  = resource_update_default_version
 
