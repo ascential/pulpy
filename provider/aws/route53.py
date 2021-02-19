@@ -7,6 +7,7 @@ from    pulumi_aws  import route53
 from parse          import ParseYAML
 from aws.mandatory  import Mandatory
 from aws.vpc        import VPCs
+from aws.efs        import EFS
 
 # General variables
 resource_type           = "route53"
@@ -142,7 +143,7 @@ class Route53:
 
                 resource_vpcs_list.append(this_vpc)
 
-            print(resource_vpcs_list)
+            print(  )
 
             # Create Route53 Private Zone
             route53_private_zone = route53.Zone(
@@ -225,6 +226,12 @@ class Route53:
 
                 elif each_record_target_type.lower() == "ec2":
                     resource_record_value = each_record_target_value
+
+                elif each_record_target_type.lower() == "efs":
+                    efs_dns                     = EFS.DNSName()
+                    resource_record_target_name = efs_dns[str(resource_record_target["efs"])]
+                    resource_record_value       = resource_record_target_name
+
 
             # Get ZoneId being Public or Private
             if resource_record_zone_type.lower() == "public":
