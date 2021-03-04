@@ -2,6 +2,7 @@ import  pulumi
 
 from    os          import getenv
 from    pulumi_aws  import lambda_
+import  tempfile
 
 # Custom packages
 from parse          import ParseYAML
@@ -42,7 +43,7 @@ class Lambda:
             lambda_function = lambda_.Function(
                 lambda_name,
                 handler                             = config.get("handler"),
-                code                                = pulumi.AssetArchive({ ".": pulumi.FileAsset("./hello_world.jar") }),
+                code                                = pulumi.AssetArchive({ "hello_world.jar": pulumi.StringAsset("Hello world") }),
                 memory_size                         = config.get("memory_size"),
                 name                                = lambda_name,
                 publish                             = config.get("publish"),
