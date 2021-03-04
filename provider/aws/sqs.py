@@ -12,6 +12,8 @@ resource_type           = "sqs"
 resource_project        = getenv('IAC__PROJECT_ID')
 resource_mandatory_tags = Mandatory.Tags()
 
+sqs_queue_by_name = {}
+
 class SQS:
 
     def __init__(self):
@@ -58,5 +60,11 @@ class SQS:
                 tags                        = tags_list
             )
 
+            sqs_queue_by_name[resource_name] = queue
+
             # Export
             pulumi.export(queue._name, queue.id)
+
+    @classmethod
+    def ByName(cls):
+        return sqs_queue_by_name
