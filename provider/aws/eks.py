@@ -136,13 +136,6 @@ class EKS:
                 nodegroup_tags_list.update({"Project/Stack": pulumi.get_project() + "/" + pulumi.get_stack()})
                 nodegroup_tags_list.update(resource_mandatory_tags)
 
-                # Getting the list of Instances for this NodeGroup
-                eks_nodegroup_instances_list = []
-                if resource_nodegroup_instance_type is not None:
-                    for each_nodegroup_instance in resource_nodegroup_instance_type:
-                        eks_nodegroup_instances_list.append(each_nodegroup_instance)
-
-
                 # Getting the list of subnets needed for EKS Node Group
                 eks_nodegroup_subnets_list = []
                 if resource_nodegroup_subnets is not None:
@@ -160,7 +153,7 @@ class EKS:
                     version             = resource_cluster_version,
                     node_role_arn       = this_nodegroup_iam_role,
                     subnet_ids          = eks_nodegroup_subnets_list,
-                    instance_types      = eks_nodegroup_instances_list,
+                    instance_types      = resource_nodegroup_instance_type,
                     disk_size           = resource_nodegroup_instance_disk_size,
                     scaling_config      = eks.NodeGroupScalingConfigArgs(
                         desired_size    = resource_nodegroup_desired_size,
