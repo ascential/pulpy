@@ -43,14 +43,16 @@ class Lambda:
             lambda_function = lambda_.Function(
                 lambda_name,
                 handler                             = config.get("handler"),
-                code                                = pulumi.AssetArchive({ "hello_world.jar": pulumi.StringAsset("Hello world") }),
+                s3_bucket                           = config.get("s3_bucket"),
+                s3_key                              = config.get("s3_key"),
+                s3_object_version                   = config.get("s3_object_version"),
                 memory_size                         = config.get("memory_size"),
-                name                                = lambda_name,
                 publish                             = config.get("publish"),
                 reserved_concurrent_executions      = config.get("reserved_concurrent_executions"),
                 role                                = IAM.RoleARN()[config.get("role")],
                 runtime                             = config.get("runtime"),
-                timeout                             = config.get("timeout")
+                timeout                             = config.get("timeout"),
+                tags                                = tags_list
             )
 
             # Export
