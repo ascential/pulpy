@@ -72,7 +72,7 @@ class Lambda:
                     function_name                   = lambda_function.arn,
                     batch_size                      = mapping_config.get("batch_size")
                 )
-                pulumi.export(mapping_name, mapping)
+                pulumi.export(mapping_name, mapping.id)
 
 
             lambdas_by_name[lambda_name] = lambda_function
