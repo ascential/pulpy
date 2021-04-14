@@ -37,31 +37,31 @@ class CloudFront:
             tags_list.update({"Project/Stack": pulumi.get_project() + "/" + pulumi.get_stack()})
             tags_list.update(resource_mandatory_tags)
 
-            aliases = cloudfront_distribution_configuration["aliases"] if "aliases" in cloudfront_distribution_configuration else None
-            default_cache_behavior = cloudfront_distribution_configuration["default_cache_behavior"] if "default_cache_behavior" in cloudfront_distribution_configuration else None
-            enabled = cloudfront_distribution_configuration["enabled"] if "enabled" in cloudfront_distribution_configuration else None
-            ordered_cache_behaviors = cloudfront_distribution_configuration["ordered_cache_behaviors"] if "ordered_cache_behaviors" in cloudfront_distribution_configuration else None
-            origins = cloudfront_distribution_configuration["origins"] if "origins" in cloudfront_distribution_configuration else None
-            price_class = cloudfront_distribution_configuration["price_class"] if "price_class" in cloudfront_distribution_configuration else None
-            viewer_certificate = cloudfront_distribution_configuration["viewer_certificate"] if "viewer_certificate" in cloudfront_distribution_configuration else None
-            custom_error_responses = cloudfront_distribution_configuration["custom_error_responses"] if "custom_error_responses" in cloudfront_distribution_configuration else None
-            restrictions = cloudfront_distribution_configuration["restrictions"] if "restrictions" in cloudfront_distribution_configuration else { "geoRestriction": { "restrictionType": "none" } }
+            aliases                 = cloudfront_distribution_configuration["aliases"]                  if "aliases"                    in cloudfront_distribution_configuration else None
+            default_cache_behavior  = cloudfront_distribution_configuration["default_cache_behavior"]   if "default_cache_behavior"     in cloudfront_distribution_configuration else None
+            enabled                 = cloudfront_distribution_configuration["enabled"]                  if "enabled"                    in cloudfront_distribution_configuration else None
+            ordered_cache_behaviors = cloudfront_distribution_configuration["ordered_cache_behaviors"]  if "ordered_cache_behaviors"    in cloudfront_distribution_configuration else None
+            origins                 = cloudfront_distribution_configuration["origins"]                  if "origins"                    in cloudfront_distribution_configuration else None
+            price_class             = cloudfront_distribution_configuration["price_class"]              if "price_class"                in cloudfront_distribution_configuration else None
+            viewer_certificate      = cloudfront_distribution_configuration["viewer_certificate"]       if "viewer_certificate"         in cloudfront_distribution_configuration else None
+            custom_error_responses  = cloudfront_distribution_configuration["custom_error_responses"]   if "custom_error_responses"     in cloudfront_distribution_configuration else None
+            restrictions            = cloudfront_distribution_configuration["restrictions"]             if "restrictions"               in cloudfront_distribution_configuration else { "geoRestriction": { "restrictionType": "none" } }
 
             # Create Cloudfront Distribution
             distribution = cloudfront.Distribution(
                 resource_name,
-                aliases = aliases,
-                default_cache_behavior = default_cache_behavior,
-                enabled = enabled,
+                aliases                 = aliases,
+                default_cache_behavior  = default_cache_behavior,
+                enabled                 = enabled,
                 ordered_cache_behaviors = ordered_cache_behaviors,
-                origins = origins,
-                price_class = price_class,
-                viewer_certificate = viewer_certificate,
-                tags = tags_list,
-                restrictions = restrictions,
-                default_root_object = "index.html",
-                custom_error_responses = custom_error_responses,
-                is_ipv6_enabled = True
+                origins                 = origins,
+                price_class             = price_class,
+                viewer_certificate      = viewer_certificate,
+                tags                    = tags_list,
+                restrictions            = restrictions,
+                default_root_object     = "index.html",
+                custom_error_responses  = custom_error_responses,
+                is_ipv6_enabled         = True
             )
 
             # Export
