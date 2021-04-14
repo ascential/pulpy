@@ -197,17 +197,22 @@ class DocumentDB:
 
             # Getting all parameters for each
             # individual DocumentDB Parameter Group
-            resource_parameters     = []
+            resource_parameters = []
 
             for each_parameter_key, each_parameter_value in parametergroup_configuration["parameters"].items():
 
-                resource_parameters.append({"name": each_parameter_key, "value": each_parameter_value["value"], "applyMethod": each_parameter_value["apply"]},)
+                resource_parameters.append(
+                    {
+                        "name": each_parameter_key,
+                        "value": each_parameter_value["value"],
+                        "applyMethod": each_parameter_value["apply"],
+                    },
+                )
 
             # Create resource
             parametergroup          = docdb.ClusterParameterGroup(
 
                 resource_name,
-                name                = resource_name,
                 description         = resource_description,
                 family              = resource_family,
                 parameters          = resource_parameters,
